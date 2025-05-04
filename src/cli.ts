@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { summarizeLogFile } from './summarizer';
@@ -20,23 +20,36 @@ const argv = yargs(hideBin(process.argv))
   .parseSync();
 
 const devCommand = argv.cmd;
-const logFile = path.resolve(argv.log);
+const logFilePath = path.resolve(argv.log);
 
 // Ensure log directory exists
-fs.mkdirSync(path.dirname(logFile), { recursive: true });
-const outStream = fs.createWriteStream(logFile, { flags: 'w' });
+fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
+const outStream = fs.createWriteStream(logFilePath, { flags: 'w' });
 
 // Start the dev process
 const [cmd, ...args] = devCommand.split(' ');
 const devProcess = spawn(cmd, args, { shell: true });
 
-// Pipe process output to terminal and log file
+// Handle process output
 devProcess.stdout.pipe(process.stdout);
 devProcess.stderr.pipe(process.stderr);
 devProcess.stdout.pipe(outStream);
 devProcess.stderr.pipe(outStream);
 
-// Watch for real-time errors on stderr
+// Centralize summarization to avoid multiple triggers
+let summarizationTriggered = false;
+async function triggerSummarization(): Promise<void> {
+  if (summarizationTriggered) return;
+  summarizationTriggered = true;
+  try {
+    console.log('\n[bug-summary-helper] Summarizing log file...');
+    await summarizeLogFile(logFilePath);
+  } catch (err) {
+    console.error('[bug-summary-helper] Failed to summarize:', err);
+  }
+}
+
+// Watch real-time errors on stderr
 let buffer = '';
 devProcess.stderr.on('data', async (chunk: Buffer) => {
   const text = chunk.toString();
@@ -47,31 +60,21 @@ devProcess.stderr.on('data', async (chunk: Buffer) => {
       /(ReferenceError|TypeError|SyntaxError|Unhandled|Exception|Error:)/
     )
   ) {
-    try {
-      console.log('\n[bug-summary-helper] Detected error — summarizing...');
-      await summarizeLogFile(logFile);
-    } catch (err) {
-      console.error('[bug-summary-helper] Failed to summarize:', err);
-    }
+    console.log('\n[bug-summary-helper] Detected error — summarizing...');
+    await triggerSummarization();
     buffer = ''; // reset to avoid spamming on same error burst
   }
 });
 
-// Still handle exit (in case dev crashes or ends)
-let handled = false;
+// Handle exit (dev crashes or ends)
 const handleExit = async (code: number) => {
-  if (handled) return;
-  handled = true;
   console.log(`\n[bug-summary-helper] Dev server exited with code ${code}`);
-  await summarizeLogFile(logFile);
+  await triggerSummarization();
 };
 
 devProcess.on('close', handleExit);
 devProcess.on('exit', handleExit);
 devProcess.on('error', err => {
-  if (!handled) {
-    handled = true;
-    console.error(`[bug-summary-helper] Error: ${err.message}`);
-    summarizeLogFile(logFile);
-  }
+  console.error(`[bug-summary-helper] Error: ${err.message}`);
+  triggerSummarization();
 });

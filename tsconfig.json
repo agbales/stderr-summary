@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "commonjs",
-    "outDir": "./dist",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "strict": true,
+    "module": "esnext",                // Use ES Modules
+    "moduleResolution": "node",        // Use Node.js-style module resolution
+    "target": "ES2020",                // Output ECMAScript 2020 (or higher)
+    "esModuleInterop": true,           // Enable interoperability between CommonJS and ES modules
+    "allowSyntheticDefaultImports": true, // Allow default imports for CommonJS modules
+    "outDir": "./dist",                // Output directory for compiled files
+    "skipLibCheck": true,              // Skip library checks for faster builds
+    "strict": true,                    // Enable all strict type-checking options
     "forceConsistentCasingInFileNames": true
   },
   "include": [

@@ -1,5 +1,6 @@
 {
   "name": "bug-summary-helper",
+  "type": "module",
   "version": "1.0.0",
   "description": "Get a one-sentence bug summary and bullet-point fix from log files.",
   "main": "dist/index.js",
@@ -13,6 +14,7 @@
   },
   "dependencies": {
     "@types/yargs": "^17.0.33",
+    "chalk": "^5.4.1",
     "dotenv": "^16.0.0",
     "openai": "^4.97.0",
     "yargs": "^17.7.2"
