@@ -37,12 +37,14 @@ export async function summarizeLogFile(logFilePath: string) {
       return;
     }
 
-    const prompt = constructPrompt(content);
+    const recentLogContent = content.slice(-3000);
+
+    const prompt = constructPrompt(recentLogContent);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
+      temperature: 0.1,
       response_format: {
         type: 'json_object',
       },
