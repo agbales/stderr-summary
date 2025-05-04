@@ -1,7 +1,7 @@
 {
   "name": "stderr-summary",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automatic LLM summary and bullet-point fixes for error logs.",
   "main": "dist/index.js",
   "bin": {
