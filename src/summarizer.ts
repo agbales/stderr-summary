@@ -2,6 +2,7 @@ import fs from 'fs';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
+import z from 'zod';
 
 dotenv.config();
 
@@ -28,19 +29,37 @@ ${logContent}
 \`\`\``;
 };
 
-export async function summarizeLogFile(logFilePath: string, model: string) {
-  console.log(chalk.green('using model'), model);
-  try {
-    const content = fs.readFileSync(logFilePath, 'utf-8');
+const ErrorSummarySchema = z.object({
+  error: z.string(),
+  fix: z.array(z.string()),
+});
 
-    if (!content.trim()) {
+const logError = (errorDescription: string) => {
+  const errMsg = `\n${chalk.bgBlue('[Error]')} ${chalk.blue(
+    `${errorDescription}`
+  )}`;
+  console.log(`${errMsg} \n`);
+};
+
+const logFixSuggestions = (fixSuggestions: string[]) => {
+  const fixList = fixSuggestions.map(fix => `- ${fix}`).join('\n');
+  console.log(chalk.bgYellow('[Fix]'));
+  console.log(chalk.yellow(fixList));
+  console.log('\n\n');
+};
+
+export async function summarizeLogFile(logFilePath: string, model: string) {
+  try {
+    const logs = fs.readFileSync(logFilePath, 'utf-8');
+
+    if (!logs.trim()) {
       console.log(chalk.yellow('[stderr-summary] Log file is empty.'));
       return;
     }
 
-    const recentLogContent = content.slice(-3000);
+    const recentLogs = logs.slice(-3000);
 
-    const prompt = constructPrompt(recentLogContent);
+    const prompt = constructPrompt(recentLogs);
 
     const response = await openai.chat.completions.create({
       model,
@@ -51,31 +70,21 @@ export async function summarizeLogFile(logFilePath: string, model: string) {
       },
     });
 
-    const out = response.choices[0]?.message?.content?.trim();
-    const json = out ? JSON.parse(out) : null;
+    const content = response.choices[0]?.message?.content?.trim() || '';
 
-    if (json) {
-      console.log(chalk.green('\n[stderr-summary]\n'));
-      if (json?.error) {
-        const label = chalk.bgBlue('[Error]');
-        const errorDescription = chalk.blue(`${json.error}`);
-        console.log(`${label}, ${errorDescription}`);
-      }
-      if (json?.fix) {
-        const label = chalk.bgYellow('[Fix]');
-        const fixDescription = chalk.yellow(
-          json.fix
-            .map((bullet: string) => {
-              return `- ${bullet}`;
-            })
-            .join('\n')
-        );
-        console.log(label);
-        console.log(fixDescription);
-      }
-    } else {
-      console.log(chalk.red('[stderr-summary] No summary returned.'));
+    const jsonContent = JSON.parse(content);
+
+    const validatedContent = ErrorSummarySchema.safeParse(jsonContent);
+
+    if (!validatedContent.success) {
+      console.error(chalk.red('[stderr-summary] Validation failed'));
+      console.error(validatedContent.error.format());
+      return;
     }
+
+    logError(validatedContent.data.error);
+
+    logFixSuggestions(validatedContent.data.fix);
   } catch (error) {
     console.error(chalk.red('[stderr-summary] ERROR'), error);
   }
