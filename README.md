@@ -25,16 +25,27 @@ Update your `package.json` "dev" script, with your current command in `--cmd`
   }
 ```
 
-You can also use on the command line like this:
+Alternatively, you can run on the command line:
 
-
-```bash
-npx stderr-summary --cmd="node your-script.js"
+```
+npx stderr-summary --cmd="npm run dev"
+```
+or
+```
+yarn stderr-summary --cmd="yarn run dev"
 ```
 
 - `--cmd` (required): The development command to run (e.g., `"next dev"`).
 - `--log` (optional): Path to the log file. Defaults to `.bug-summary-helper/dev.log`.
 - `--model` (optional): OpenAI model. Default is `4o`
+
+## Environment Variables
+
+Assure that your a `.env` file at the root of the project and add your OpenAI API key:
+
+```env
+OPENAI_API_KEY=your_api_key_here
+```
 
 ## Example Output
 
@@ -48,10 +59,3 @@ When an error occurs, it will be followed by an error description and recommende
 - Use optional chaining to avoid runtime errors.
 ```
 
-## Environment Variables
-
-Assure that your a `.env` file at the root of the project and add your OpenAI API key:
-
-```env
-OPENAI_API_KEY=your_api_key_here
-```
