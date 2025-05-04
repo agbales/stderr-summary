@@ -3,7 +3,7 @@ import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import z from 'zod';
-dotenv.config();
+const envConfig = dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const constructPrompt = (logContent) => {
     return `Analyze the following log file and provide the following JSON output:
@@ -39,6 +39,21 @@ const logFixSuggestions = (fixSuggestions) => {
     console.log(chalk.yellow(fixList));
     console.log('\n\n');
 };
+const sanitizeLogs = (logs) => {
+    let sanitizedLogs = logs;
+    if (envConfig.error) {
+        console.error(chalk.red('[stderr-summary] Failed to load .env file.'));
+    }
+    // Use the parsed env variables directly from .env file
+    const envVars = Object.values(envConfig.parsed || {}).filter(val => {
+        return val.trim() !== '';
+    });
+    envVars.forEach(envVar => {
+        const regex = new RegExp(envVar, 'g');
+        sanitizedLogs = sanitizedLogs.replace(regex, '<redacted>');
+    });
+    return sanitizedLogs;
+};
 export async function summarizeLogFile(logFilePath, model) {
     try {
         const logs = fs.readFileSync(logFilePath, 'utf-8');
@@ -46,8 +61,9 @@ export async function summarizeLogFile(logFilePath, model) {
             console.log(chalk.yellow('[stderr-summary] Log file is empty.'));
             return;
         }
-        const recentLogs = logs.slice(-3000);
-        const prompt = constructPrompt(recentLogs);
+        const sanitizedLogs = sanitizeLogs(logs);
+        const recentSanitizedLogs = sanitizedLogs.slice(-3000);
+        const prompt = constructPrompt(recentSanitizedLogs);
         const response = await openai.chat.completions.create({
             model,
             messages: [{ role: 'user', content: prompt }],

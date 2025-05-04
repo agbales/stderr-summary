@@ -1,10 +1,6 @@
 # Stderr Summary
 
-Automatic summary and bullet-point fixes for development error logs.
-
-## Purpose
-
-`stderr-summary` monitors your development server’s error logs in real time. When an error is detected, it automatically uses an LLM to summarize the error and provides bullet-point recommendations to help you resolve it.
+`stderr-summary` summarizes and generates bullet-point fixes for development error logs in real time. For safety, it also redacts values from `.env` before requesting feedback from the LLM.
 
 ## Install
 
@@ -36,7 +32,7 @@ yarn stderr-summary --cmd="yarn run dev"
 ```
 
 - `--cmd` (required): The development command to run (e.g., `"next dev"`).
-- `--log` (optional): Path to the log file. Defaults to `.bug-summary-helper/dev.log`.
+- `--log` (optional): Path to the log file. Defaults to `.stderr-summary/dev.log`.
 - `--model` (optional): OpenAI model. Default is `4o`
 
 ## Environment Variables

@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { summarizeLogFile } from './summarizer.js';
+import chalk from 'chalk';
 const argv = yargs(hideBin(process.argv))
   .option('cmd', {
     type: 'string',
@@ -42,10 +43,10 @@ async function triggerSummarization(model) {
   if (summarizationTriggered) return;
   summarizationTriggered = true;
   try {
-    console.log('\n[bug-summary-helper] Summarizing log file...');
+    console.log(chalk.red('\n[stderr-summary] Summarizing log file...'));
     await summarizeLogFile(logFilePath, model);
   } catch (err) {
-    console.error('[bug-summary-helper] Failed to summarize:', err);
+    console.error('[stderr-summary] Failed to summarize:', err);
   }
 }
 // Watch real-time errors on stderr
@@ -58,19 +59,19 @@ devProcess.stderr.on('data', async chunk => {
       /(ReferenceError|TypeError|SyntaxError|Unhandled|Exception|Error:)/
     )
   ) {
-    console.log('\n[bug-summary-helper] Detected error — summarizing...');
+    console.log('\n[stderr-summary] Detected error — summarizing...');
     await triggerSummarization(model);
     buffer = ''; // reset to avoid spamming on same error burst
   }
 });
 // Handle exit (dev crashes or ends)
 const handleExit = async code => {
-  console.log(`\n[bug-summary-helper] Dev server exited with code ${code}`);
+  console.log(`\n[stderr-summary] Dev server exited with code ${code}`);
   await triggerSummarization(model);
 };
 devProcess.on('close', handleExit);
 devProcess.on('exit', handleExit);
 devProcess.on('error', err => {
-  console.error(`[bug-summary-helper] Error: ${err.message}`);
+  console.error(`[stderr-summary] Error: ${err.message}`);
   triggerSummarization(model);
 });
