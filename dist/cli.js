@@ -13,12 +13,18 @@ const argv = yargs(hideBin(process.argv))
   })
   .option('log', {
     type: 'string',
-    description: 'Path to log file (default: ".bug-summary-helper/dev.log")',
-    default: path.resolve('.bug-summary-helper/dev.log'),
+    description: 'Path to log file (default: ".stderr-summary/dev.log")',
+    default: path.resolve('.stderr-summary/dev.log'),
+  })
+  .option('model', {
+    type: 'string',
+    description: 'OpenAI model to use (e.g., "gpt-4o")',
+    default: 'gpt-4o',
   })
   .parseSync();
 const devCommand = argv.cmd;
 const logFilePath = path.resolve(argv.log);
+const model = argv.model;
 // Ensure log directory exists
 fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
 const outStream = fs.createWriteStream(logFilePath, { flags: 'w' });
@@ -32,12 +38,12 @@ devProcess.stdout.pipe(outStream);
 devProcess.stderr.pipe(outStream);
 // Centralize summarization to avoid multiple triggers
 let summarizationTriggered = false;
-async function triggerSummarization() {
+async function triggerSummarization(model) {
   if (summarizationTriggered) return;
   summarizationTriggered = true;
   try {
     console.log('\n[bug-summary-helper] Summarizing log file...');
-    await summarizeLogFile(logFilePath);
+    await summarizeLogFile(logFilePath, model);
   } catch (err) {
     console.error('[bug-summary-helper] Failed to summarize:', err);
   }
@@ -53,18 +59,18 @@ devProcess.stderr.on('data', async chunk => {
     )
   ) {
     console.log('\n[bug-summary-helper] Detected error — summarizing...');
-    await triggerSummarization();
+    await triggerSummarization(model);
     buffer = ''; // reset to avoid spamming on same error burst
   }
 });
 // Handle exit (dev crashes or ends)
 const handleExit = async code => {
   console.log(`\n[bug-summary-helper] Dev server exited with code ${code}`);
-  await triggerSummarization();
+  await triggerSummarization(model);
 };
 devProcess.on('close', handleExit);
 devProcess.on('exit', handleExit);
 devProcess.on('error', err => {
   console.error(`[bug-summary-helper] Error: ${err.message}`);
-  triggerSummarization();
+  triggerSummarization(model);
 });

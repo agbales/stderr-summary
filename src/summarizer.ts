@@ -28,7 +28,8 @@ ${logContent}
 \`\`\``;
 };
 
-export async function summarizeLogFile(logFilePath: string) {
+export async function summarizeLogFile(logFilePath: string, model: string) {
+  console.log(chalk.green('using model'), model);
   try {
     const content = fs.readFileSync(logFilePath, 'utf-8');
 
@@ -42,7 +43,7 @@ export async function summarizeLogFile(logFilePath: string) {
     const prompt = constructPrompt(recentLogContent);
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.1,
       response_format: {

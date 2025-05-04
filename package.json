@@ -2,7 +2,7 @@
   "name": "stderr-summary",
   "type": "module",
   "version": "1.0.0",
-  "description": "Automatic summary and bullet-point fixes for error logs.",
+  "description": "Automatic LLM summary and bullet-point fixes for error logs.",
   "main": "dist/index.js",
   "bin": {
     "stderr-summary": "./dist/cli.js"
