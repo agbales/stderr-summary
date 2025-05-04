@@ -33,7 +33,7 @@ export async function summarizeLogFile(logFilePath: string) {
     const content = fs.readFileSync(logFilePath, 'utf-8');
 
     if (!content.trim()) {
-      console.log(chalk.yellow('[bug-summary-helper] Log file is empty.'));
+      console.log(chalk.yellow('[stderr-summary] Log file is empty.'));
       return;
     }
 
@@ -54,27 +54,28 @@ export async function summarizeLogFile(logFilePath: string) {
     const json = out ? JSON.parse(out) : null;
 
     if (json) {
-      console.log(chalk.green('\n[bug-summary-helper]\n'));
+      console.log(chalk.green('\n[stderr-summary]\n'));
       if (json?.error) {
-        console.log(chalk.bgBlue('[Error summary]'));
-        console.log(chalk.blue(`${json.error}`));
+        const label = chalk.bgBlue('[Error]');
+        const errorDescription = chalk.blue(`${json.error}`);
+        console.log(`${label}, ${errorDescription}`);
       }
       if (json?.fix) {
-        console.log(chalk.bgYellow('[Fix]'));
-        console.log(
-          chalk.yellow(
-            json.fix
-              .map((bullet: string) => {
-                return `- ${bullet}`;
-              })
-              .join('\n')
-          )
+        const label = chalk.bgYellow('[Fix]');
+        const fixDescription = chalk.yellow(
+          json.fix
+            .map((bullet: string) => {
+              return `- ${bullet}`;
+            })
+            .join('\n')
         );
+        console.log(label);
+        console.log(fixDescription);
       }
     } else {
-      console.log(chalk.red('[bug-summary-helper] No summary returned.'));
+      console.log(chalk.red('[stderr-summary] No summary returned.'));
     }
   } catch (error) {
-    console.error(chalk.red('[bug-summary-helper] ERROR'), error);
+    console.error(chalk.red('[stderr-summary] ERROR'), error);
   }
 }

@@ -1,16 +1,14 @@
 {
-  "name": "bug-summary-helper",
+  "name": "stderr-summary",
   "type": "module",
   "version": "1.0.0",
-  "description": "Get a one-sentence bug summary and bullet-point fix from log files.",
+  "description": "Automatic summary and bullet-point fixes for error logs.",
   "main": "dist/index.js",
   "bin": {
-    "bug-summary-helper": "./dist/cli.js"
+    "stderr-summary": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "next dev && bug-summary some/path/to/your/dev_output.log",
-    "start": "node dist/cli.js"
+    "build": "tsc"
   },
   "dependencies": {
     "@types/yargs": "^17.0.33",
@@ -23,5 +21,8 @@
     "@types/node": "^18.0.0",
     "ts-node": "^10.0.0",
     "typescript": "^5.0.0"
-  }
+  },
+  "files": [
+    "dist/**/*"
+  ]
 }
